@@ -93,7 +93,7 @@ if args['hist'] is True:
                             url2 = link[0] + match['link']
                             p = requests.get(url2)
                             p.encoding = 'ISO-8859-1'
-                            poup = BeautifulSoup(p.content)
+                            poup = BeautifulSoup(p.content.replace('&nbsp', ' '))
                             try:
                                 '''
                                 getting 'xhash' obrezaja text
@@ -115,24 +115,21 @@ if args['hist'] is True:
                             '''
                             status = poup.find(id='event-status')
                             try:
-                                match['resalt'] = [int(x) for x in str(status.strong.text).split(':')]
+                                match['resalt'] = [int(x) for x in str(status.strong.text).split(' ')[0].split(':')]
                             except Exception, e:
-                                print "Result error \n", match
+                                print "Result error \n"
                                 raise e
                             try:
                                 match['resbox'] = str(status.p.contents[2]).replace('(', '').replace(')', '')
                             except Exception, e:
-                                print 'ResBoxError \n', match
+                                print 'ResBoxError \n'
                                 raise e
                             try:
                                 match['ot'] = False if len(match['resbox'].split(', ')) == 4 else True
                             except Exception, e:
-                                print 'OT Error \n', match
+                                print 'OT Error \n'
                                 raise e
-                        except Exception, e:
-                            print 'On match error'
-                            raise e
-                        print match, '\n'
+                            print match, '\n'
             except Exception, e:
                 raise e
 else:
