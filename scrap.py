@@ -22,7 +22,8 @@ import requests, time
 from bs4 import BeautifulSoup
 from docopt import docopt
 
-args = docopt(__doc__, version='0.1.6')
+args = docopt(__doc__, version='0.1.7')
+
 link = ['http://www.oddsportal.com', '/basketball/usa/nba-', '/results/page/']
 seas = {'14/15': '2014-2015', '13/14': '2013-2014', '12/13': '2012-2013',
         '11/12': '2011-2012', '10/11': '2010-2011', '09/10': '2009-2010',
@@ -86,43 +87,52 @@ if args['hist'] is True:
                             except Exception, e:
                                 print 'Link error: \n', tr.prettify()
                                 raise e
+                            ##############################
+                            ####### PAGE SCRAPPING #######
+                            ##############################
+                            url2 = link[0] + match['link']
+                            p = requests.get(url2)
+                            p.encoding = 'ISO-8859-1'
+                            poup = BeautifulSoup(p.content)
                             try:
-                                url2 = link[0] + match['link']
-                                p = requests.get(url2)
-                                p.encoding = 'ISO-8859-1'
-                                poup = BeautifulSoup(p.content)
-                                
-                                try:
-                                    '''
-                                    getting 'xhash' obrezaja text
-                                    '''
-                                    text = str(poup)
-                                    frst = text.find('xhash') + 8
-                                    last = text.find('xhashf') - 3
-                                    match['hash'] = text[frst:last]
-                                except Exception, e:
-                                    print 'xhash Error'
-                                    raise e
-                                try:
-                                    '''
-                                    <p class="result">
-                                      [0] <span class="bold">Final result </span>
-                                      [1] <strong>103:100&nbsp;OT&nbsp;(95:95)</strong>
-                                      [2] (27:25, 17:25, 21:25, 30:20, 8:5)
-                                    </p>
-                                    'ascii' codec can't encode character u'\xa0' in position 7: ordinal not in range(128)
-                                    '''
-                                    status = poup.find(id='event-status')
-                                    match['resalt'] = [int(x) for x in str(status.strong.text).split(':')]
-                                    match['resbox'] = str(status.p.contents[2]).replace('(', '').replace(')', '')
-                                    match['ot'] = False if len(match['resbox'].split(', ')) == 4 else True
-                                except Exception, e:
-                                    print 'Results Error'
-                                    raise e
+                                '''
+                                getting 'xhash' obrezaja text
+                                '''
+                                text = str(poup)
+                                frst = text.find('xhash') + 8
+                                last = text.find('xhashf') - 3
+                                match['hash'] = text[frst:last]
                             except Exception, e:
-                                print 'On match error'
+                                print 'xhash Error'
                                 raise e
-                            print match, '\n'
+                            '''
+                            <p class="result">
+                                [0] <span class="bold">Final result </span>
+                                [1] <strong>109:108&nbsp;OT&nbsp;(99:99)</strong>
+                                [2] (27:25, 17:25, 21:25, 30:20, 8:5)
+                            </p>
+                            'ascii' codec can't encode character u'\xa0' in position 7: ordinal not in range(128)
+                            '''
+                            status = poup.find(id='event-status')
+                            try:
+                                match['resalt'] = [int(x) for x in str(status.strong.text).split(':')]
+                            except Exception, e:
+                                print "Result error \n", match
+                                raise e
+                            try:
+                                match['resbox'] = str(status.p.contents[2]).replace('(', '').replace(')', '')
+                            except Exception, e:
+                                print 'ResBoxError \n', match
+                                raise e
+                            try:
+                                match['ot'] = False if len(match['resbox'].split(', ')) == 4 else True
+                            except Exception, e:
+                                print 'OT Error \n', match
+                                raise e
+                        except Exception, e:
+                            print 'On match error'
+                            raise e
+                        print match, '\n'
             except Exception, e:
                 raise e
 else:
@@ -130,8 +140,3 @@ else:
     For Last console arguments
     '''
     pass
-
-'''
-for key, val in args.iteritems():
-    print key, val
-'''
